@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valuation &amp; Exit Planning Dashboard</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#182031; --panel2:#1f2a40; --line:#2b3a55;
+    --txt:#e8eef7; --mut:#93a3bd; --acc:#4da3ff; --good:#3ddc84; --warn:#ffb020; --bad:#ff5d5d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  header{padding:22px 18px 8px;max-width:1080px;margin:0 auto}
+  header h1{margin:0 0 4px;font-size:22px}
+  header p{margin:0;color:var(--mut);font-size:13px}
+  main{max-width:1080px;margin:0 auto;padding:10px 18px 60px}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0}
+  h2{margin:0 0 12px;font-size:17px}
+  h3{margin:14px 0 8px;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+  .tickers{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+  .tickers button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer}
+  .tickers button.active{background:var(--acc);border-color:var(--acc);color:#06121f;font-weight:700}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  label{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit}
+  textarea{min-height:54px;resize:vertical}
+  input[type=range]{padding:0}
+  .field{margin-bottom:10px}
+  .out{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:8px 0;font-size:14px}
+  .out b{color:var(--acc)}
+  .big{font-size:22px;font-weight:700}
+  .pos{color:var(--good)} .neg{color:var(--bad)} .amber{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:right}
+  th{background:var(--panel2);color:var(--mut);font-weight:600}
+  td:first-child,th:first-child{text-align:left}
+  .tabs{display:flex;gap:8px;margin-bottom:10px}
+  .tabs button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:14px}
+  .tabs button.active{background:var(--acc);color:#06121f;font-weight:700;border-color:var(--acc)}
+  .note{font-size:12px;color:var(--mut)}
+  .warnbox{border-left:3px solid var(--warn);background:rgba(255,176,32,.08);padding:10px 12px;border-radius:0 8px 8px 0;margin:10px 0;font-size:13px}
+  .risk{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+  .risk:last-child{border-bottom:none}
+  .risk input{width:auto;margin-top:4px}
+  .risk .rt{font-weight:600}
+  .risk .rd{font-size:13px;color:var(--mut)}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .btnrow button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px}
+  .btnrow button:hover{border-color:var(--acc)}
+  .tierrow{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
+  footer{max-width:1080px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-size:12px}
+  .kicker{display:inline-block;font-size:11px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;color:var(--mut);margin-bottom:8px}
+  @media (max-width:560px){ header h1{font-size:19px} section{padding:14px} }
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 Valuation &amp; Exit Planning Dashboard</h1>
+  <p>DCF scenarios, peer multiples, and a mechanical exit plan — for AMD and other semiconductor companies. All data is user-entered; nothing is fetched. Educational tool, not investment advice.</p>
+</header>
+<main>
+
+<!-- 1. TICKER + COMPANY DATA -->
+<section id="sec-company">
+  <h2>1 · Company</h2>
+  <div class="tickers" id="tickerRow"></div>
+  <p class="note" id="tickerNote"></p>
+  <div class="grid">
+    <div class="field"><label>Share price ($) <span class="note">— last known / your update</span></label><input type="number" step="any" id="f_price"></div>
+    <div class="field"><label>Price as-of / note</label><input type="text" id="f_priceNote"></div>
+    <div class="field"><label>Forward EPS ($)</label><input type="number" step="any" id="f_eps"></div>
+    <div class="field"><label>EPS growth, forward (%, annual)</label><input type="number" step="any" id="f_epsGrowth"></div>
+    <div class="field"><label>TTM EBITDA ($B)</label><input type="number" step="any" id="f_ebitda"></div>
+    <div class="field"><label>TTM revenue ($B)</label><input type="number" step="any" id="f_revenue"></div>
+    <div class="field"><label>Shares outstanding (B)</label><input type="number" step="any" id="f_shares"></div>
+    <div class="field"><label>Net debt ($B, negative = net cash)</label><input type="number" step="any" id="f_netdebt"></div>
+    <div class="field"><label>Analyst mean target ($)</label><input type="number" step="any" id="f_target"></div>
+  </div>
+</section>
+
+<!-- 2. MULTIPLES -->
+<section id="sec-multiples">
+  <h2>2 · Multiples</h2>
+  <div id="multOut"></div>
+  <h3>Peer forward P/E bands <span class="note">(defaults from research brief — midpoints are starting guesses, edit freely)</span></h3>
+  <div id="peerTable"></div>
+  <h3>Z-score vs your own history</h3>
+  <div class="grid">
+    <div class="field"><label>Metric to test</label>
+      <select id="z_metric"><option value="pe">Forward P/E</option><option value="evebitda">EV/EBITDA</option><option value="evsales">EV/Sales</option></select></div>
+    <div class="field"><label>History (comma-separated, e.g. 28,32,35,30,41)</label><input type="text" id="z_hist"></div>
+  </div>
+  <div id="zOut"></div>
+</section>
+
+<!-- 3. DCF SCENARIOS -->
+<section id="sec-dcf">
+  <h2>3 · DCF Scenarios</h2>
+  <div class="tabs" id="scenTabs">
+    <button data-s="bull">Bull</button><button data-s="base" class="active">Base</button><button data-s="bear">Bear</button>
+  </div>
+  <p class="note" id="scenDesc"></p>
+  <div class="grid">
+    <div class="field"><label>Revenue CAGR (% /yr)</label><input type="number" step="any" id="s_cagr"></div>
+    <div class="field"><label>Gross margin start → end (%)</label><input type="text" id="s_gm"></div>
+    <div class="field"><label>Op margin start → end (%)</label><input type="text" id="s_om"></div>
+    <div class="field"><label>Tax rate (%)</label><input type="number" step="any" id="s_tax"></div>
+    <div class="field"><label>Capex (% of revenue)</label><input type="number" step="any" id="s_capex"></div>
+    <div class="field"><label>Δ Working capital (% of revenue)</label><input type="number" step="any" id="s_wc"></div>
+    <div class="field"><label>Share count change (% /yr)</label><input type="number" step="any" id="s_shch"></div>
+  </div>
+  <div class="grid">
+    <div class="field"><label>WACC: <b id="waccLbl"></b></label><input type="range" id="s_wacc" min="6" max="14" step="0.25"></div>
+    <div class="field"><label>Terminal growth: <b id="tgLbl"></b></label><input type="range" id="s_tg" min="1" max="6" step="0.25"></div>
+  </div>
+  <div id="dcfOut"></div>
+  <h3>WACC × terminal-growth sensitivity (per-share fair value)</h3>
+  <div id="sensGrid"></div>
+</section>
+
+<!-- 4. EXIT PLAN -->
+<section id="sec-exit">
+  <h2>4 · Exit Plan</h2>
+  <div class="grid">
+    <div class="field"><label>Cost basis ($/share)</label><input type="number" step="any" id="x_basis"></div>
+    <div class="field"><label>Shares held</label><input type="number" step="any" id="x_shares"></div>
+  </div>
+  <h3>Trim tiers <span class="note">(trims are % of the ORIGINAL position)</span></h3>
+  <div id="tierRows"></div>
+  <div class="btnrow"><button id="addTier">+ Add tier</button><button id="resetTiers">Reset to defaults</button></div>
+  <div id="tierOut"></div>
+  <h3>Trailing stop</h3>
+  <div class="grid">
+    <div class="field"><label>Trail (%)</label><input type="number" step="any" id="t_trail" value="15"></div>
+    <div class="field"><label>Price history, chronological, comma-separated</label><input type="text" id="t_hist"></div>
+    <div class="field"><label>Current price to check ($)</label><input type="number" step="any" id="t_now"></div>
+  </div>
+  <div id="trailOut"></div>
+</section>
+
+<!-- 5. THESIS RISKS -->
+<section id="sec-risks">
+  <h2>5 · Thesis Risks <span class="note">— check a box when the risk starts materializing</span></h2>
+  <div id="riskList"></div>
+</section>
+
+<!-- 6. TAX -->
+<section id="sec-tax">
+  <h2>6 · Canadian Tax Notes</h2>
+  <div class="warnbox"><b>UNVERIFIED:</b> the research brief claimed the capital-gains inclusion rate is 50% up to $250K/yr and 66.67% above it. That federal proposal was reversed and never took effect — <b>verify current rules with a tax professional</b> before using them in any plan.</div>
+  <ul>
+    <li><b>ACB in CAD:</b> in a non-registered account, your adjusted cost base is computed in Canadian dollars using the Bank of Canada exchange rate on each trade's settlement date.</li>
+    <li><b>Stagger trims:</b> trimming a highly appreciated US stock in one year can push gains into a higher bracket — spreading sales across tax years may help.</li>
+    <li><b>Withholding tax:</b> AMD pays no dividend today. For US dividend payers, the 15% IRS withholding is exempt inside an RRSP, but <b>not</b> in a TFSA or margin account.</li>
+    <li><b>FX:</b> track the CAD/USD rate — your true net liquidation value is in CAD.</li>
+  </ul>
+</section>
+
+</main>
+<footer>
+  Educational and organizational tool only — not investment advice. DCF outputs are only as good as the assumptions you type in. Verify every figure against primary sources before making decisions. Built 2026-09-27.
+</footer>
+<script src="stock-math.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
